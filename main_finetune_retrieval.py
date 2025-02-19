@@ -21,7 +21,7 @@ from torch.distributed.optim import ZeroRedundancyOptimizer
 import torch.nn.parallel
 import torchvision.transforms as transforms
 import torchvision.transforms._transforms_video as transforms_video
-import wandb
+#import wandb
 
 from lavila.data import datasets
 from lavila.data.video_transforms import Permute
@@ -328,9 +328,9 @@ def main(args):
             warmup_epochs=args.warmup_epochs, start_warmup_value=args.lr_start,
         )
 
-    if dist_utils.is_main_process() and args.wandb:
-        wandb_id = os.path.split(args.output_dir)[-1]
-        wandb.init(project='LaViLa', id=wandb_id, config=args, resume='allow')
+    #if dist_utils.is_main_process() and args.wandb:
+    #    wandb_id = os.path.split(args.output_dir)[-1]
+    #    wandb.init(project='LaViLa', id=wandb_id, config=args, resume='allow')
 
     print(args)
 
@@ -372,11 +372,11 @@ def main(args):
                      **{f'test_{k}': v for k, v in val_stats.items()},
                      'epoch': epoch}
 
-        if dist_utils.is_main_process():
-            if args.wandb:
-                wandb.log(log_stats)
-            with open(os.path.join(args.output_dir, 'log.txt'), 'a') as f:
-                f.write(json.dumps(log_stats) + '\n')
+        #if dist_utils.is_main_process():
+        #    if args.wandb:
+        #        wandb.log(log_stats)
+        with open(os.path.join(args.output_dir, 'log.txt'), 'a') as f:
+            f.write(json.dumps(log_stats) + '\n')
 
 
 def train(train_loader, model, criterion, optimizer, scaler, epoch, lr_schedule, args):
@@ -477,9 +477,9 @@ def train(train_loader, model, criterion, optimizer, scaler, epoch, lr_schedule,
         mem.update(torch.cuda.max_memory_allocated() // 1e9)
 
         if optim_iter % args.print_freq == 0:
-            if dist_utils.is_main_process() and args.wandb:
-                wandb.log({**{k: v.item() for k, v in loss_dict.items()},
-                           'scaler': scaler.get_scale(), 'logit': logit_scale})
+            #if dist_utils.is_main_process() and args.wandb:
+            #    wandb.log({**{k: v.item() for k, v in loss_dict.items()},
+            #               'scaler': scaler.get_scale(), 'logit': logit_scale})
             progress.display(optim_iter)
     progress.synchronize()
     return {**{k: v.avg for k, v in metrics.items()},
@@ -537,8 +537,8 @@ def validate_mir(val_loader, model, criterion, args):
             mem.update(torch.cuda.max_memory_allocated() // 1e9)
 
             if i % args.print_freq == 0:
-                if dist_utils.is_main_process() and args.wandb:
-                    wandb.log({**{k: v.item() for k, v in loss_dict.items()}})
+                #if dist_utils.is_main_process() and args.wandb:
+                #    wandb.log({**{k: v.item() for k, v in loss_dict.items()}})
                 progress.display(i)
     progress.synchronize()
     all_text_embed = np.vstack(all_text_embed)

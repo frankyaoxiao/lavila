@@ -1,0 +1,16 @@
+python run_with_submitit_finetune_retrieval.py \
+    --dataset charades_ego \
+    --metadata /resnick/scratch/fyxiao/CharadesEgo_v1_train_only3rd.pkl \
+    --metadata-val /resnick/scratch/fyxiao/annotations/CharadesEgo_v1_test_only1st.csv \
+    --root /resnick/scratch/fyxiao/CharadesEgo_v1_480/ \
+    --epochs 10 \
+    --save-freq 1 --eval-freq 1 \
+    --sparse-sample \
+    --pretrain-model /resnick/scratch/fyxiao/CharadesEgo_v1_480/models/clip_openai_timesformer_large.narrator_rephraser.ep_0001.md5sum_9a25de.pth \
+    --batch-size 12 \
+    --use-checkpoint \
+    --nodes 1 \
+    --ngpus 4 \
+    --partition gpu \
+    --use_h100 \
+    --job_dir /resnick/groups/perona/fxiao/lavila/jobs \

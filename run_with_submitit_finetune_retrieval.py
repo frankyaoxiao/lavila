@@ -24,7 +24,8 @@ def parse_args():
     parser.add_argument("--job_dir", default="", type=str, help="Job dir. Leave empty for automatic.")
 
     parser.add_argument("--partition", default="learnlab", type=str, help="Partition where to submit")
-    parser.add_argument("--use_volta32", action='store_true', help="Big models? Use this")
+    parser.add_argument("--use_volta32", action='store_true', help="Big models? Use volta32 GPUs")
+    parser.add_argument("--use_h100", action='store_true', help="Use H100 GPUs")
     parser.add_argument('--comment', default="", type=str,
                         help='Comment to pass to scheduler, e.g. priority message')
     return parser.parse_args()
@@ -32,15 +33,15 @@ def parse_args():
 
 def get_shared_folder() -> Path:
     user = os.getenv("USER")
-    if Path("/checkpoint/").is_dir():
-        p = Path(f"/checkpoint/{user}/experiments/lavila_ft")
+    if Path("/resnick/groups/perona/fxiao/lavila/jobs").is_dir():
+        p = Path(f"/resnick/groups/perona/fxiao/lavila/jobs")
         p.mkdir(exist_ok=True)
         return p
     raise RuntimeError("No shared folder available")
 
 
 def get_init_file():
-    # Init file must not exist, but it's parent dir must exist.
+    # Init file must not exist, but its parent dir must exist.
     os.makedirs(str(get_shared_folder()), exist_ok=True)
     init_file = get_shared_folder() / f"{uuid.uuid4().hex}_init"
     if init_file.exists():
@@ -60,7 +61,6 @@ class Trainer(object):
 
     def checkpoint(self):
         import submitit
-
         self.args.dist_url = get_init_file().as_uri()
         print("Requeuing ", self.args)
         empty_trainer = type(self)(self.args)
@@ -94,11 +94,14 @@ def main():
     kwargs = {}
     if args.use_volta32:
         kwargs['slurm_constraint'] = 'volta32gb'
+    if args.use_h100:
+        kwargs['slurm_gres'] = 'gpu:4'
+        kwargs['slurm_constraint'] = 'epyc'
     if args.comment:
         kwargs['slurm_comment'] = args.comment
 
     executor.update_parameters(
-        mem_gb=40 * num_gpus_per_node,
+        mem_gb=80 * num_gpus_per_node,
         gpus_per_node=num_gpus_per_node,
         tasks_per_node=num_gpus_per_node,  # one task per GPU
         cpus_per_task=10,
