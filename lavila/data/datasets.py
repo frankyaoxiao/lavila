@@ -37,6 +37,11 @@ def video_loader(root, vid, second, end_second=None, chunk_len=300, fps=30, clip
     if fps == -1:
         fps = vr.get_avg_fps()
 
+    # Skip invalid time ranges
+    if end_second <= second:
+        print(f"Warning: Skipping sample with invalid time range (start={second}, end={end_second})")
+        return None
+
     # calculate frame_ids
     frame_offset = int(np.round(second_offset * fps))
     total_duration = max(int((end_second - second) * fps), clip_length)
@@ -208,6 +213,9 @@ class VideoCaptionDatasetBase(torch.utils.data.Dataset):
                                       end_second=end_second,
                                       clip_length=clip_length,
                                       jitter=is_training)
+                if frames is None:  # Skip invalid samples
+                    return None, None
+                
                 if isinstance(narration, list):
                     if narration_selection == 'random':
                         narration = random.choice(narration)
@@ -365,6 +373,11 @@ class VideoCaptionDatasetCLIP(VideoCaptionDatasetBase):
             sparse_sample=self.sparse_sample,
             narration_selection=self.narration_selection,
         )
+
+        # Skip invalid samples by trying the next index
+        if frames is None:
+            next_i = (i + 1) % len(self)
+            return self.__getitem__(next_i)
 
         # ek100_mir will also output relevancy value
         if isinstance(caption, tuple):
